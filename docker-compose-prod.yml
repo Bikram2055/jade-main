@@ -1,0 +1,109 @@
+version: '3'
+services:
+  db:
+    image: postgres:14.2
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+    env_file:
+      - ./.env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - nginx-network
+  
+  web:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: dev.txt
+    restart: always
+    ports:
+      - 8000:8000
+    # command: sh /entrypoint-web.sh
+    command: >
+      sh -c "./manage.py migrate &&
+            ./manage.py collectstatic --noinput && 
+            gunicorn --bind 0.0.0.0:8000 -w 4 --limit-request-line 6094 --access-logfile - src.wsgi:application"
+    env_file:
+      - ./.env
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    networks:
+      - nginx-network
+  
+  nginx:
+    build:
+      context: ./nginx
+    restart: always
+    depends_on:
+      - web
+    ports:
+      - 80:80
+    networks:
+      - nginx-network
+
+  queue:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: dev.txt
+    restart: always
+    env_file:
+      - ./.env
+    # command: sh /entrypoint-queue.sh
+    command: 'sh -c "celery -A src.config worker --loglevel=debug --concurrency=4"'
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - web
+      - redis
+    networks:
+      - nginx-network
+
+  beat:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: dev.txt
+    restart: always
+    env_file:
+      - ./.env
+    # command: sh /entrypoint-beat.sh
+    command: 'sh -c "celery -A src.config beat --loglevel=debug --scheduler django_celery_beat.schedulers:DatabaseScheduler"'
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - web
+      - redis
+    networks:
+      - nginx-network
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - nginx-network
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: always
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - nginx-network
+
+volumes:
+  db-data:
+
+networks:
+  nginx-network:
+    name: nginx-network

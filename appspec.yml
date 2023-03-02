@@ -1,0 +1,15 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/ubuntu/jade
+hooks:
+  AfterInstall:
+    - location: script.sh
+      timeout: 900
+      runas: root
+      runCommand:
+        - command: echo "running docker-compose command"
+        - command: chmod +x script.sh
+        - command: script.sh
+        - command: echo "Build successful!"
