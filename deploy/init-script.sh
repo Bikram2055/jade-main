@@ -8,7 +8,7 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip
 unzip awscliv2.zip
 sudo ./aws/install
 rm awscliv2.zip
-sudo git clone https://github.com/ccir41/jade.git
+sudo git clone https://github.com/Bikram2055/jade-main.git
 sudo chown -R $USER:$USER jade/
 cd jade
 # get secrets from parameter store and export them as environemt variable
