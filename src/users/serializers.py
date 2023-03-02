@@ -1,16 +1,20 @@
 from rest_framework import serializers
 
-from src.users.models import User
-from src.common.serializers import ThumbnailerJSONSerializer
+from src.users.models import Address, User
+
+
+class UsernameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
 
 
 class UserSerializer(serializers.ModelSerializer):
-    profile_picture = ThumbnailerJSONSerializer(required=False, allow_null=True, alias_target='src.users')
-
     class Meta:
         model = User
         fields = (
             'id',
+            'email',
             'username',
             'first_name',
             'last_name',
@@ -20,7 +24,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
-    profile_picture = ThumbnailerJSONSerializer(required=False, allow_null=True, alias_target='src.users')
     tokens = serializers.SerializerMethodField()
 
     def get_tokens(self, user):
@@ -46,3 +49,15 @@ class CreateUserSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('tokens',)
         extra_kwargs = {'password': {'write_only': True}}
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['user', 'country', 'city', 'street']
+
+
+class Address_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['country', 'city', 'street']
